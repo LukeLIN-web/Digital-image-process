@@ -1,0 +1,12 @@
+﻿  test.cpp
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(139): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(144): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(145): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(146): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(147): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(150): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(155): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(156): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(157): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project1\codes\project1\project1\test.cpp(158): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+  Project1.vcxproj -> C:\Users\12638\Desktop\digital image process\project1\codes\Project1\x64\Debug\Project1Nearest neighbor, bilinear and bicubic interpolation.exe
