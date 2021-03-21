@@ -45,17 +45,16 @@ int main(){
 }
 
 Mat ThreeInter(Mat &image) {
-	float Row_B = image.rows * 2;
+	float Row_B = image.rows * 2;// 高放大到两倍
 	float Col_B = image.cols * 2;
 
-	Mat biggerImage(Row_B, Col_B, CV_8UC3);
+	Mat resImage(Row_B, Col_B, CV_8UC3);
 
 	for (int i = 2; i < Row_B - 4; i++) {
 		for (int j = 2; j < Col_B - 4; j++) {
 			float x = i * (image.rows / Row_B);//放大后的图像的像素位置相对于源图像的位置
 			float y = j * (image.cols / Col_B);//得到B（X,Y）在图像A中对应的位置（x,y）=(X*(m/M),Y*(N/n))
 
-			/*if (int(x) > 0 && int(x) < image.rows - 2 && int(y)>0 && int(y) < image.cols - 2){*/
 			float w_x[4], w_y[4];//行列方向的加权系数
 			getW_x(w_x, x);//利用所选择的基函数，求出对应的每个像素的权值
 			getW_y(w_y, y);
@@ -66,10 +65,10 @@ Mat ThreeInter(Mat &image) {
 					temp = temp + (Vec3f)(image.at<Vec3b>(int(x) + s - 1, int(y) + t - 1))*w_x[s] * w_y[t];
 				}
 			}
-			biggerImage.at<Vec3b>(i, j) = (Vec3b)temp;
+			resImage.at<Vec3b>(i, j) = (Vec3b)temp;
 		}
 	}
-	return biggerImage;
+	return resImage;
 }
 
 Mat Downsampling(Mat &srcImage,double kx,double ky ) {
@@ -90,49 +89,31 @@ Mat Downsampling(Mat &srcImage,double kx,double ky ) {
 Mat LinerInter(Mat &srcImage, double kx, double ky){
 	int rows = cvRound(srcImage.rows*kx);
 	int cols = cvRound(srcImage.cols*ky);
-	Mat resultImg(rows, cols, srcImage.type());
+	Mat resultImg(rows, cols, srcImage.type());//也可以用Mat resImage(Row_B, Col_B, CV_8UC3);RGB3通道就用CV_8UC3
 	int i, j;
-	int xi;
-	int yi;
-	int x11;
-	int y11;
-	double xm;
-	double ym;
-	double dx;
-	double dy;
+	double dx, dy;
 
-	for (i = 0; i < rows; i++)
-	{
-		xm = i / kx;
-		xi = (int)xm;
-		x11 = xi + 1;
-		dx = xm - xi;
-		for (j = 0; j < cols; j++)
-		{
-			ym = j / ky;
-			yi = (int)ym;
-			y11 = yi + 1;
-			dy = ym - yi;
+	for (i = 0; i < rows; i++){
+		// 得到在原图中的点
+		int xi = (int)(i / kx);//左边
+		int x11 = xi + 1; //右边
+		dx = i / kx - xi;// dx=  int(i / kx) -xi
+		for (j = 0; j < cols; j++){
+			int yi = (int)(j / ky);
+			int y11 = yi + 1;
+			dy = j / ky - yi;
 			//判断边界
 			if (x11 > (srcImage.rows - 1))
 				x11 = xi - 1;
 			if (y11 > (srcImage.cols - 1))
 				y11 = yi - 1;
-			//bgr
-			resultImg.at<Vec3b>(i, j)[0] = (int)(srcImage.at<Vec3b>(xi, yi)[0] * (1 - dx)*(1 - dy)
-				+ srcImage.at<Vec3b>(x11, yi)[0] * dx*(1 - dy)
-				+ srcImage.at<Vec3b>(xi, y11)[0] * (1 - dx)*dy
-				+ srcImage.at<Vec3b>(x11, y11)[0] * dx*dy);
-			resultImg.at<Vec3b>(i, j)[1] = (int)(srcImage.at<Vec3b>(xi, yi)[1] * (1 - dx)*(1 - dy)
-				+ srcImage.at<Vec3b>(x11, yi)[1] * dx*(1 - dy)
-				+ srcImage.at<Vec3b>(xi, y11)[1] * (1 - dx)*dy
-				+ srcImage.at<Vec3b>(x11, y11)[1] * dx*dy);
-			resultImg.at<Vec3b>(i, j)[2] = (int)(srcImage.at<Vec3b>(xi, yi)[2] * (1 - dx)*(1 - dy)
-				+ srcImage.at<Vec3b>(x11, yi)[2] * dx*(1 - dy)
-				+ srcImage.at<Vec3b>(xi, y11)[2] * (1 - dx)*dy
-				+ srcImage.at<Vec3b>(x11, y11)[2] * dx*dy);
+			for (int k = 0; k < 3; k++) {
+				resultImg.at<Vec3b>(i, j)[k] = (int)(srcImage.at<Vec3b>(xi, yi)[k] * (1 - dx)*(1 - dy)
+					+ srcImage.at<Vec3b>(x11, yi)[k] * dx*(1 - dy)
+					+ srcImage.at<Vec3b>(xi, y11)[k] * (1 - dx)*dy
+					+ srcImage.at<Vec3b>(x11, y11)[k] * dx*dy );
+			}//f(x,y)=f(0,0)(1-x)(1-y)+f(1,0)x(1-y)+f(0,1)(1-x)y+f(1,1)xy
 		}
-
 	}
 	return resultImg;
 }
