@@ -1,0 +1,8 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: 中间目录(x64\Debug\)包含从另一个项目(Project1Nearest neighbor, bilinear and bicubic interpolation.vcxproj, Project2filterSaltNoise.vcxproj)共享的文件。   这会导致错误的清除和重新生成行为。
+  noiseFilter.cpp
+c:\users\12638\desktop\digital image process\project3\codes\project3\project1\noisefilter.cpp(30): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project3\codes\project3\project1\noisefilter.cpp(102): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project3\codes\project3\project1\noisefilter.cpp(136): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project3\codes\project3\project1\noisefilter.cpp(137): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+c:\users\12638\desktop\digital image process\project3\codes\project3\project1\noisefilter.cpp(138): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+  Project1.vcxproj -> C:\Users\12638\Desktop\digital image process\project3\codes\Project3\x64\Debug\Project3HighFreq.exe
