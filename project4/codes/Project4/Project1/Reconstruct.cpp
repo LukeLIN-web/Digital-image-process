@@ -1,171 +1,179 @@
 ﻿
+
 #include <iostream>  
 #include <opencv2/core/core.hpp>  
 #include <opencv2/highgui/highgui.hpp>  
 #include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/imgproc.hpp"
 #include <opencv2/imgcodecs.hpp>
+#include<opencv2/opencv.hpp>
 #include <time.h>
 #include <string>
+#include "opencv2/imgproc.hpp"
+
+#define MAX_CHANNEL 3
+#define MAX_CORE_X 11
+#define MAX_CORE_Y 11
+#define MAX_CORE_LENGTH MAX_CORE_X*MAX_CORE_Y
+#define pi 3.1415926
+#define e 2.7182818
+
 using namespace cv;
 using namespace std;
-// 零填充
-cv::Mat image_add_border(cv::Mat &src){
-	int w = 2 * src.cols;
-	int h = 2 * src.rows;
-	std::cout << "src: " << src.cols << "*" << src.rows << std::endl;
 
-	cv::Mat padded;
-	copyMakeBorder(src, padded, 0, h - src.rows, 0, w - src.cols,
-		cv::BORDER_CONSTANT, cv::Scalar::all(0));
-	padded.convertTo(padded, CV_32FC1);
-	std::cout << "opt: " << padded.cols << "*" << padded.rows << std::endl;
-	return padded;
-}
-
-//transform to center 中心化
-void center_transform(cv::Mat &src){
-	for (int i = 0; i < src.rows; i++) {
-		float *p = src.ptr<float>(i);
-		for (int j = 0; j < src.cols; j++) {
-			p[j] = p[j] * pow(-1, i + j);
+Mat addSaltNoise(const Mat srcImage, int n)
+{
+	Mat dstImage = srcImage.clone();
+	for (int k = 0; k < n; k++)
+	{
+		//随机取值行列
+		int i = rand() % dstImage.rows;
+		int j = rand() % dstImage.cols;
+		//图像通道判定
+		if (dstImage.channels() == 1)
+		{
+			dstImage.at<uchar>(i, j) = 255;		//盐噪声
+		}
+		else
+		{
+			dstImage.at<Vec3b>(i, j)[0] = 255;
+			dstImage.at<Vec3b>(i, j)[1] = 255;
+			dstImage.at<Vec3b>(i, j)[2] = 255;
 		}
 	}
-}
-
-//对角线交换内容
-void zero_to_center(cv::Mat &freq_plane){
-	int cx = freq_plane.cols / 2; 
-	int cy = freq_plane.rows / 2;//以下的操作是移动图像  (零频移到中心)
-	cv::Mat part1_r(freq_plane, cv::Rect(0, 0, cx, cy)); 
-	cv::Mat part2_r(freq_plane, cv::Rect(cx, 0, cx, cy));
-	cv::Mat part3_r(freq_plane, cv::Rect(0, cy, cx, cy));
-	cv::Mat part4_r(freq_plane, cv::Rect(cx, cy, cx, cy));
-
-	cv::Mat tmp;
-	part1_r.copyTo(tmp);
-	part4_r.copyTo(part1_r);
-	tmp.copyTo(part4_r);
-
-	part2_r.copyTo(tmp);
-	part3_r.copyTo(part2_r);
-	tmp.copyTo(part3_r);
-}
-
-
-void show_spectrum(cv::Mat &complexI,string name){
-	cv::Mat temp[] = { cv::Mat::zeros(complexI.size(),CV_32FC1),
-					  cv::Mat::zeros(complexI.size(),CV_32FC1) };
-	//显示频谱图
-	cv::split(complexI, temp);
-	cv::Mat aa;
-	cv::magnitude(temp[0], temp[1], aa);
-	cv::divide(aa, aa.cols*aa.rows, aa);
-	cv::imshow(name, aa);// 显示不同的频谱
-}
-
-//频率域滤波
-cv::Mat frequency_filter(cv::Mat &padded, cv::Mat &blur,string name){
-	cv::Mat plane[] = { padded, cv::Mat::zeros(padded.size(), CV_32FC1) };
-	cv::Mat complexIm;
-
-	cv::merge(plane, 2, complexIm);
-	cv::dft(complexIm, complexIm);//fourior transform
-	show_spectrum(complexIm,name);
-
-	cv::multiply(complexIm, blur, complexIm);
-	cv::idft(complexIm, complexIm, CV_DXT_INVERSE);
-	cv::Mat dst_plane[2];
-	cv::split(complexIm, dst_plane);
-	center_transform(dst_plane[0]);
-
-	cv::magnitude(dst_plane[0], dst_plane[1], dst_plane[0]);
-
-	return dst_plane[0];
-}
-
-//没有提升的核
-cv::Mat withoutEnhance_high_kernel(cv::Mat &scr, float D0) {
-	cv::Mat gaussian_high_pass(scr.size(), CV_32FC2);
-	int row_num = scr.rows;
-	int col_num = scr.cols;
-	float d0 = 2 * D0 * D0; // 2 *d0 ^2
-	for (int i = 0; i < row_num; i++) {
-		float *p = gaussian_high_pass.ptr<float>(i);
-		for (int j = 0; j < col_num; j++) {
-			float d = pow((i - row_num / 2), 2) + pow((j - col_num / 2), 2);//移动到中间
-			p[2 * j] = 1 - expf(-d / d0);// 没有提升
-			p[2 * j + 1] = 1 - expf(-d / d0); //没有用原函数混合补充
+	for (int k = 0; k < n; k++)
+	{
+		//随机取值行列
+		int i = rand() % dstImage.rows;
+		int j = rand() % dstImage.cols;
+		//图像通道判定
+		if (dstImage.channels() == 1)
+		{
+			dstImage.at<uchar>(i, j) = 0;		//椒噪声
+		}
+		else
+		{
+			dstImage.at<Vec3b>(i, j)[0] = 0;
+			dstImage.at<Vec3b>(i, j)[1] = 0;
+			dstImage.at<Vec3b>(i, j)[2] = 0;
 		}
 	}
-	return gaussian_high_pass;
+	return dstImage;
 }
-//没有提升的滤波器
-cv::Mat withoutEnhance_highpass_filter(cv::Mat &src, float D0){
-	cv::Mat padded = image_add_border(src);
-	center_transform(padded);// 零填充, 然后放在中间
-	cv::Mat gaussian_kernel = withoutEnhance_high_kernel(padded, D0);
-	cv::Mat result = frequency_filter(padded, gaussian_kernel,"withoutEnhance_highpass_filter");
-	return result;
-}
+int motionBlurCore(float* core, int width, int height, int dir)
+{
+	if (height != 1 || width % 2 != 1)
+		return 0;
 
-
-//高斯高通提升滤波器
-cv::Mat gaussian_high_kernel(cv::Mat &scr, float D0){
-	cv::Mat gaussian_high_pass(scr.size(), CV_32FC2);
-	int row_num = scr.rows;
-	int col_num = scr.cols;
-	float d0 = 2 * D0 * D0; // 2 *d0 ^2
-	for (int i = 0; i < row_num; i++){
-		float *p = gaussian_high_pass.ptr<float>(i);
-		for (int j = 0; j < col_num; j++) {
-			float d = pow((i - row_num / 2), 2) + pow((j - col_num / 2), 2);//移动到中间
-			p[2 * j] = 0.5 + 0.75*(1 - expf(-d / d0));// a=0.5，b=0.75
-			p[2 * j + 1] = 0.5 + 0.75*(1 - expf(-d / d0)); //a = 0.5，b = 0.75
-		}
+	int count = width / 2 + 1;
+	if (dir == 0)
+	{
+		for (int i = 0; i < count; i++)
+			core[i] = 1.0 / count;
+		for (int i = count; i < width; i++)
+			core[i] = 0.0;
 	}
-	return gaussian_high_pass;
-}
-
-//高斯高通滤波器
-cv::Mat gaussian_highpass_filter(cv::Mat &src, float D0){
-	cv::Mat padded = image_add_border(src);
-	center_transform(padded);// 零填充, 然后放在中间
-	cv::Mat gaussian_kernel = gaussian_high_kernel(padded, D0);
-	cv::Mat result = frequency_filter(padded, gaussian_kernel,"stress_highpass_filter");
-	return result;
-}
-
-int main(){
-	Mat image = imread("Lina.jpg",IMREAD_GRAYSCALE);
-	if (image.empty())
-		return -1;
-	float radius = 2;
-
-	cv::imshow("src", image);
-	cv::Mat src_eq;
-	cv::equalizeHist(image, src_eq);// 直方图均衡
-	cv::imshow("直方图均衡后", src_eq);
-
-	Mat withoutHance_result = withoutEnhance_highpass_filter(image, radius);
-	withoutHance_result = withoutHance_result(Rect(0, 0, image.cols, image.rows));
-	cv::normalize(withoutHance_result, withoutHance_result, 255, 0, CV_MINMAX);
-	withoutHance_result.convertTo(withoutHance_result, CV_8U);
-	
-	imshow("没有提升的滤波", withoutHance_result);
-	//equalizeHist(withoutHance_result, withoutHance_result);// 可以试一试均衡化.
-
-	cv::Mat gaussian_result = gaussian_highpass_filter(image, radius);//高斯高通滤波.
-	gaussian_result = gaussian_result(cv::Rect(0, 0, image.cols, image.rows));//变成一个矩形.
-	//归一化
-	cv::normalize(gaussian_result, gaussian_result, 255, 0, CV_MINMAX);
-	gaussian_result.convertTo(gaussian_result, CV_8U);
-	
-	cv::imshow("高频提升滤波", gaussian_result);
-	Mat equal;
-	cv::equalizeHist(gaussian_result,equal);// 直方图均衡
-	cv::imshow("高频提升滤波再均衡化", gaussian_result);
-	cv::waitKey(0);
-
+	else {
+		for (int i = 0; i < count - 1; i++)
+			core[i] = 0.0;
+		for (int i = count - 1; i < width; i++)
+			core[i] = 1.0 / count;
+	}
 	return 1;
 }
 
+void filter(Mat src, Mat dst, const float core[], int cx, int cy)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int channel = src.channels();
+
+	uchar *pout;
+	uchar *tmp;
+
+	int line[MAX_CORE_LENGTH] = { 0 };
+	int cx2 = cx / 2;
+	int cy2 = cy / 2;
+	for (int j = 0; j < height; j++)
+	{
+		pout = dst.ptr<uchar>(j);
+		for (int i = 0; i < width; i++)
+		{
+			float sum[MAX_CHANNEL] = { 0 };
+
+			for (int y = 0; y < cy; y++)
+			{
+				for (int x = 0; x < cx; x++)
+				{
+					int tx = i + x - cx2;
+					int cp = y * cx + x;
+
+					for (int c = 0; c < channel; c++)
+					{
+						if (j + y - cy2 < 0)
+						{
+							tmp = src.ptr<uchar>(0);
+							if (tx < 0)
+								sum[c] += tmp[c] * core[cp];
+							else if (tx >= width)
+								sum[c] += tmp[(width - 1)*channel + c] * core[cp];
+							else
+								sum[c] += tmp[tx*channel + c] * core[cp];
+						}
+						else if (j + y - cy2 >= height)
+						{
+							tmp = src.ptr<uchar>(height - 1);
+							if (tx < 0)
+								sum[c] += tmp[c] * core[cp];
+							else if (tx >= width)
+								sum[c] += tmp[(width - 1)*channel + c] * core[cp];
+							else
+								sum[c] += tmp[tx*channel + c] * core[cp];
+						}
+						else {
+							tmp = src.ptr<uchar>(j);
+							int ty = (y - cy2)*width*channel;
+							if (tx < 0)
+								sum[c] += tmp[ty + c] * core[cp];
+							else if (tx >= width)
+								sum[c] += tmp[ty + (width - 1)*channel + c] * core[cp];
+							else
+								sum[c] += tmp[ty + tx * channel + c] * core[cp];
+						}
+					}
+				}
+			}
+			for (int r = 0; r < channel; r++)
+			{
+				pout[i*channel + r] = (int)sum[r];
+			}
+		}
+	}
+}
+
+int main(){
+	Mat srcImg = imread("blurred.jpg");
+
+	if (!srcImg.data)
+	{
+		return -1;
+	}
+	imshow("source", srcImg);
+
+	//Mat dstImg(srcImg.size(), CV_8UC3);
+
+	//float core[9];
+	//int x = 9, y = 1;
+	//if (motionBlurCore(core, x, y, 0))
+	//	filter(srcImg, dstImg, core, x, y); //恢复的时候要根据模糊图像来
+
+	/*imshow("result", dstImg);
+	imwrite("ShaonvBlur.jpg", dstImg);*/
+	Mat noise = addSaltNoise(srcImg, 3000);
+	imshow("addnoise", noise);
+	imwrite("ShaonvBlurNoise.jpg", noise);
+	//Mat noBlur = addSaltNoise(srcImg, 3000);
+	//imshow("onlyNoise", noBlur);
+	waitKey(0);
+	return 0;
+}
