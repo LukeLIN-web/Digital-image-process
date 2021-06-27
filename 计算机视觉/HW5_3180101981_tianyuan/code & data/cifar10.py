@@ -32,18 +32,18 @@ class DealDataset(Dataset):
 def unpickle(file):
     import pickle
     with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
+        dict = pickle.load(fo, encoding='bytes')  # dict有四个key，其中data是10000*6072的图片数据，labels
+    return dict  # 是标成0-9分类，还有其他key有字符串格式的分类说明
 
 
 def load_data(folder, data_name):
     data_batch1 = unpickle(folder + data_name)
     train_set_x = data_batch1[b'data']
-    train_set_x = train_set_x.reshape(10000, 3, 32, 32)
-    train_set_x = np.transpose(train_set_x, (0, 2, 3, 1))
-    binary_set_x = train_set_x / 255
+    train_set_x = train_set_x.reshape(10000, 3, 32, 32)  # 转成矩阵格式
+    train_set_x = np.transpose(train_set_x, (0, 2, 3, 1))  # 改成 10000 * 32 * 32* 3
+    binary_set_x = train_set_x / 255  #归一化
     train_set_y = data_batch1[b'labels']
-    train_set_y = np.array(train_set_y)
+    train_set_y = np.array(train_set_y) #载入labels
     return binary_set_x, train_set_y
 
 
@@ -89,10 +89,11 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
+
 net = Net()
 net = net.double()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.002, momentum=0.9)
+optimizer = optim.SGD(net.parameters(), lr=0.002, momentum=0.9)  # 优化器
 
 loss_list = []
 for epoch in range(50):
@@ -113,7 +114,7 @@ for epoch in range(50):
         # print statistics
         running_loss += loss.item()
 
-        if i % 500 == 499:    # print every 500 mini-batches
+        if i % 500 == 499:  # print every 500 mini-batches
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 500))
             loss_list.append(running_loss / 500)
@@ -123,11 +124,11 @@ print('Finished Training')
 plt.plot(loss_list)
 plt.title('traning loss')
 plt.xlabel('epochs')
-plt.ylabel('loss')
+plt.ylabel('loss')  # 绘制loss曲线
 plt.show()
 
 PATH = './cifar_net.pth'
-torch.save(net.state_dict(), PATH)
+torch.save(net.state_dict(), PATH)  # 保存
 
 # 测试
 images, labels = next(iter(test_loader))
@@ -146,7 +147,7 @@ outputs = net(images)
 _, predicted = torch.max(outputs, 1)
 
 print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
-                              for j in range(8)))
+                              for j in range(8)))  # 输出网络分类的结果
 
 correct = 0
 total = 0
@@ -159,7 +160,7 @@ with torch.no_grad():
         correct += (predicted == labels).sum().item()
 
 print('Accuracy of the network on the 10000 test images: %d %%' % (
-    100 * correct / total))
+        100 * correct / total))  # 输出整个测试集的准确率
 
 class_correct = list(0. for i in range(10))
 class_total = list(0. for i in range(10))
@@ -174,14 +175,6 @@ with torch.no_grad():
             class_correct[label] += c[i].item()
             class_total[label] += 1
 
-
 for i in range(10):
     print('Accuracy of %5s : %2d %%' % (
-        classes[i], 100 * class_correct[i] / class_total[i]))
-
-
-
-
-
-
-
+        classes[i], 100 * class_correct[i] / class_total[i]))  # 输出每个class的准确率
